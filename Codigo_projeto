@@ -1,133 +1,89 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
-typedef struct Data{
-    int Dia;
-    int Mes;
-    int Ano;
-} Data;
-
-typedef struct Registro{
-    char Nome[20];
-    int Idade;
-    char RG[15];
-    struct Data* Entrada;
-} Registro;
-
-typedef struct Paciente {
-    Registro dados;
-    struct Paciente *proximo;
-} Paciente;
+#define LEN 100
 
 typedef struct {
-    Paciente *primeiro;
-    int qtd;
-} Lista_Pacientes;
+	char data[LEN];
+	int head;
+	int tail;
+	int qtde;
+} Queue;
 
-Lista_Pacientes *criar_lista(){
-    Lista_Pacientes *lista = malloc(sizeof(Lista_Pacientes));
-    lista->primeiro = NULL;
-    lista->qtd = 0;
-    return lista;
+void enqueue(Queue *queue, char caracter) {
+    // implementar
+    if(queue->qtde == LEN){
+        return;
+    }
+    queue->data[queue->tail++] = caracter;
+    queue->qtde++;
 }
 
-Paciente *criar_paciente(Registro dados){
-    Paciente *novo = malloc(sizeof(Paciente));   
-    novo->dados = dados;
-    novo->proximo = NULL;
-    return novo;
+char dequeue(Queue *queue) {
+    // implementar
+    if(queue->qtde == 0){
+        return -1;
+    }
+    char valor = queue->data[queue->head++];
+    queue->qtde--;
+    return valor;
 }
 
-void cadastrar_paciente(Lista_Pacientes *lista, Registro dados) {
-    Paciente *novo = criar_paciente(dados);
-    novo->proximo = lista->primeiro;
-    lista->primeiro = novo;
-    lista->qtd++;
+void show(Queue *queue) {
+    // implementar
+    //printf("HEAD -> ");
+    for(int i = queue->head ; i < queue->tail ; i++){
+        printf("%c ", queue->data[i]);
+    }
+    //printf("<- TAIL\n");
+    printf("\n");
 }
 
-void *consultar_paciente(Lista_Pacientes *lista, char rg[]){
-    Paciente *atual = lista->primeiro;
+void start_queue(Queue *queue) {
+    // implementar
+    queue->head = 0;
+    queue->tail = 0;
+    queue->qtde = 0;
+}
 
-    while(atual != NULL){
-        if(strcmp(atual->dados.RG, rg) == 0){
-            return atual;
+int main(void) {
+    char s[LEN];
+    fgets(s, sizeof(s), stdin);
+    Queue queue;
+    Queue queue_2;
+    char var;
+
+    
+    start_queue(&queue);
+
+    for (int i = 0; s[i] != '\0'; i++) {
+        enqueue(&queue, s[i]);
+    }
+        
+    // implementar
+
+    int x = queue.qtde;
+    for(int i = 0 ; i < x ; i++){
+        var = dequeue(&queue);
+        
+        if(var == '('){
+            enqueue(&queue_2, var);
         }
-    }
-}
-
-void *remover_paciente(Lista_Pacientes *lista, char rg[15]){
-    Paciente *atual = lista->primeiro;
-    Paciente *anterior = NULL;
-
-    while(atual != NULL && strcmp(atual->dados.RG, rg) != 0){
-        anterior = atual;
-        atual = atual->proximo;
+        else if(var == ')'){
+            dequeue(&queue_2);
+        }
+        
     }
 
-    if(atual == NULL){
-        printf("\n -_-_-_-_ RG não encontrado na lista.. _-_-_-_-");
+    if(queue_2.qtde == 0){
+        printf("correto");
     }
     else{
-        anterior = atual->proximo;
+        printf("incorreto");
     }
-    free(atual);
 
-    lista->qtd--;
-}
-
-void mostrar_lista(Lista_Pacientes *lista){
-    Paciente *atual = lista->primeiro;
     
-    while(atual != NULL){
-        printf("\nNome: %s", atual->dados.Nome);
-        printf("\nIdade: %s", atual->dados.Idade);
-        printf("\nRG: %s", atual->dados.RG);
-        printf("\nEntrada: %02d/%02d/%04d", 
-                                atual->dados.Entrada->Dia,
-                                atual->dados.Entrada->Mes,
-                                atual->dados.Entrada->Ano);
-        atual = atual->proximo;
-    }
-}
 
-void atualizar_paciente(Lista_Pacientes *lista, char rg[15]){
-    Paciente *atual = lista->primeiro;
-    char atualiza_nome[20];
-    char atualiza_RG[15];
-    int atualiza_idade;
-    Data *nova_data = malloc(sizeof(Data));
 
-    while(atual != NULL){
-        if(strcmp(atual->dados.RG, rg) == 0){
-            printf("\nDigite seu novo nome: ");
-            scanf(atualiza_nome);
-            printf("\nDigite sua nova idade: ");
-            scanf("%s", &atualiza_idade);
-            printf("\nDigite seu novo RG: ");
-            scanf(atualiza_RG);
-            printf("\nDigite o novo dia de entrada: ");
-            scanf("%d", &nova_data->Dia);
-            printf("\nDigite o novo mes de entrada: ");
-            scanf("%d", &nova_data->Mes);
-            printf("\nDigite o novo ano de entrada: ");
-            scanf("%d", &nova_data->Ano);
-
-            strcpy(atual->dados.Nome, atualiza_nome);
-            atual->dados.Idade = atualiza_idade;
-            strcpy(atual->dados.RG, atualiza_RG);
-
-            free(atual->dados.Entrada);
-            atual->dados.Entrada = nova_data;
-        }
-        atual = atual->proximo;
-    }
-    printf("\nPaciente não encontrado..");
-    free(nova_data);
-}
-
-int main(){
 
     return 0;
 }
-
