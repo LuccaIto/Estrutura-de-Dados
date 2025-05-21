@@ -1,0 +1,443 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define LEN 100
+#define MAX_HEAP 20
+
+//estrutura da LDE
+typedef struct Data{
+    int Dia;
+    int Mes;
+    int Ano;
+} Data;
+
+typedef struct Registro{
+    char Nome[20];
+    int Idade;
+    char RG[15];
+    struct Data* Entrada;
+} Registro;
+
+typedef struct Paciente {
+    Registro dados;
+    struct Paciente *proximo;
+} Paciente;
+
+typedef struct Lista_Pacientes{
+    Paciente *primeiro;
+    int qtd;
+} Lista_Pacientes;
+
+//ESTRUTURA DE FILA
+typedef struct Queue {
+    Paciente* data[LEN];
+    int head;
+    int tail;
+    int qtde;
+} Queue;
+
+typedef struct Fila {
+    Paciente *head;
+    Paciente *tail;
+} Fila;
+
+//ESTRUTURA HEAP
+typedef struct{
+    Registro *dados[MAX_HEAP];
+    int qtd;
+} Heap;
+
+//estrutura da arvore
+typedef struct Vertice{
+    Registro *dados;
+    struct Vertice *esq;
+    struct Vertice *dir;
+    struct Vertice *pai;
+} Vertice;
+
+
+
+//CODIGO DE CADASTRO E AFINS
+Lista_Pacientes *criar_lista(){
+    Lista_Pacientes *lista = malloc(sizeof(Lista_Pacientes));
+    lista->primeiro = NULL;
+    lista->qtd = 0;
+    return lista;
+}
+
+Paciente *criar_paciente(Registro dados){
+    Paciente *novo = malloc(sizeof(Paciente));   
+    novo->dados = dados;
+    novo->proximo = NULL;
+    return novo;
+}
+
+void cadastrar_paciente(Lista_Pacientes *lista, Registro dados) {
+    Paciente *novo = criar_paciente(dados);
+    novo->proximo = lista->primeiro;
+    lista->primeiro = novo;
+    lista->qtd++;
+}
+
+Paciente *consultar_paciente(Lista_Pacientes *lista, char rg[]){
+    Paciente *atual = lista->primeiro;
+
+    while(atual != NULL){
+        if(strcmp(atual->dados.RG, rg) == 0){
+            return atual;
+        }
+        atual = atual->proximo;
+    }
+    return NULL;
+}
+
+void remover_paciente(Lista_Pacientes *lista, char rg[15]){
+    Paciente *atual = lista->primeiro;
+    Paciente *anterior = NULL;
+
+    while(atual != NULL && strcmp(atual->dados.RG, rg) != 0){
+        anterior = atual;
+        atual = atual->proximo;
+    }
+
+    if(atual == NULL){
+        printf("\n -_-_-_-_ RG não encontrado na lista.. _-_-_-_-");
+        return;
+    }
+    if(anterior == NULL){
+        lista->primeiro = atual->proximo;
+    } else {
+        anterior->proximo = atual->proximo;
+    }
+
+    free(atual->dados.Entrada);
+    free(atual);
+
+    lista->qtd--;
+    printf("\nPaciente removido com sucesso.\n");
+}
+
+void mostrar_lista(Lista_Pacientes *lista){
+    Paciente *atual = lista->primeiro;
+    
+    if(atual != NULL){
+        for(int i = 0 ; i < lista->qtd ; i++){
+            printf("\n");
+            printf("\n--> Paciente %d", lista->qtd - i);
+            printf("\nNome: %s", atual->dados.Nome);
+            printf("\nIdade: %d", atual->dados.Idade);
+            printf("\nRG: %s", atual->dados.RG);
+            printf("\nEntrada: %02d/%02d/%04d", 
+                                atual->dados.Entrada->Dia,
+                                atual->dados.Entrada->Mes,
+                                atual->dados.Entrada->Ano);
+            atual = atual->proximo;
+        }
+    }
+}
+
+void atualizar_paciente(Lista_Pacientes *lista, char rg[15]){
+    Paciente *atual = lista->primeiro;
+    char atualiza_nome[20];
+    char atualiza_RG[15];
+    int atualiza_idade;
+    Data *nova_data = malloc(sizeof(Data));
+
+    while(atual != NULL){
+        if(strcmp(atual->dados.RG, rg) == 0){
+            printf("\nDigite seu novo nome: ");
+            scanf(" %[^\n]", atualiza_nome);
+            printf("\nDigite sua nova idade: ");
+            scanf("%d", &atualiza_idade);
+            printf("\nDigite seu novo RG: ");
+            scanf("%s", atualiza_RG);
+            printf("\nDigite o novo dia de entrada: ");
+            scanf("%d", &nova_data->Dia);
+            printf("\nDigite o novo mes de entrada: ");
+            scanf("%d", &nova_data->Mes);
+            printf("\nDigite o novo ano de entrada: ");
+            scanf("%d", &nova_data->Ano);
+
+            strcpy(atual->dados.Nome, atualiza_nome);
+            atual->dados.Idade = atualiza_idade;
+            strcpy(atual->dados.RG, atualiza_RG);
+
+            free(atual->dados.Entrada);
+            atual->dados.Entrada = nova_data;
+
+            printf("\nPaciente atualizado com sucesso.\n");
+            return;
+            break;
+        }
+        atual = atual->proximo;
+    }
+    printf("\nPaciente não encontrado..");
+}
+
+//CODIGOS DA FILA
+void start_queue(Queue* queue) {
+    queue->head = 0;
+    queue->tail = 0;
+    queue->qtde = 0;
+}
+
+void enqueue(Queue* queue, Paciente* paciente) {
+    if (queue->qtde == LEN) {
+        printf("\nFila cheia!\n");
+        return;
+    }
+    queue->data[queue->tail++] = paciente;
+    if (queue->tail == LEN) queue->tail = 0;
+    queue->qtde++;
+}
+
+Paciente* dequeue(Queue* queue) {
+    if (queue->qtde == 0) {
+        printf("\nFila vazia!\n");
+        return NULL;
+    }
+    Paciente* paciente = queue->data[queue->head++];
+    if (queue->head == LEN) queue->head = 0;
+    queue->qtde--;
+    return paciente;
+}
+
+void show_queue(Queue* queue) {
+    if (queue->qtde == 0) {
+        printf("\nFila de atendimento vazia.\n");
+        return;
+    }
+    printf("\nFila de Atendimento: \n");
+    for (int i = queue->head; i < queue->head + queue->qtde; i++) {
+        int index = i % LEN;
+        printf("-> %s ", queue->data[index]->dados.Nome);
+    }
+    printf("\n");
+}
+//CODIGO HEAP
+int pai_heap(int i) {
+    return (i - 1) / 2; 
+}
+int filho_esquerdo(int i) {
+    return 2 * i + 1;
+}
+int filho_direito(int i) {
+    return 2 * i + 2;
+}
+
+void peneirar_heap(Heap *heap, int i){
+    int maior = i;
+    int esq = filho_esquerdo(i);
+    int dir = filho_direito(i);
+
+    if (esq < heap->qtd && heap->dados[esq]->Idade > heap->dados[maior]->Idade) {
+        maior = esq;
+    }
+
+    if (dir < heap->qtd && heap->dados[dir]->Idade > heap->dados[maior]->Idade) {
+        maior = dir;
+    }
+
+    if (maior != i) {
+        Registro* temp = heap->dados[i];
+        heap->dados[i] = heap->dados[maior];
+        heap->dados[maior] = temp;
+        peneirar_heap(heap, maior);
+    }
+}
+
+void inserir_heap(Heap* heap, Registro* registro) {
+    if (heap->qtd >= MAX_HEAP) {
+        printf("\nFila prioritária cheia!\n");
+        return;
+    }
+
+    int i = heap->qtd;
+    heap->dados[i] = registro;
+    heap->qtd++;
+
+    while (i > 0 && heap->dados[pai_heap(i)]->Idade < heap->dados[i]->Idade) {
+        Registro *temp = heap->dados[i];
+        heap->dados[i] = heap->dados[pai_heap(i)];
+        heap->dados[pai_heap(i)] = temp;
+        i = pai_heap(i);
+    }
+}
+
+Registro* remover_heap(Heap* heap) {
+    if (heap->qtd == 0) {
+        printf("\nFila prioritária vazia!\n");
+        return NULL;
+    }
+
+    Registro* removido = heap->dados[0];
+    heap->dados[0] = heap->dados[heap->qtd - 1];
+    heap->qtd--;
+    peneirar_heap(heap, 0);
+    return removido;
+}
+
+void mostrar_heap(Heap* heap) {
+    if (heap->qtd == 0) {
+        printf("\nFila prioritária vazia!\n");
+        return;
+    }
+
+    printf("\nFila Prioritária por Idade:\n");
+    for (int i = 0; i < heap->qtd; i++) {
+        printf("-> %s (Idade: %d)\n", heap->dados[i]->Nome, heap->dados[i]->Idade);
+    }
+}
+
+
+//CODIGO DA ARVORE
+
+
+
+int main() {
+    Lista_Pacientes *lista = criar_lista();
+    Heap *heap = malloc(sizeof(Heap));
+    Queue fila;
+    start_queue(&fila);
+    int opcao;
+    char rg[15];
+    Paciente *proximo = NULL;
+    Registro *r = NULL;
+
+    do {
+        printf("\n");
+        printf("\n=== Menu de Operações ===\n");
+        printf("1 - Cadastrar paciente\n");
+        printf("2 - Consultar paciente\n");
+        printf("3 - Mostrar todos os pacientes\n");
+        printf("4 - Atualizar paciente\n");
+        printf("5 - Remover paciente\n");
+        printf("6 - Enfileirar Paciente na fila de atendimento\n");
+        printf("7 - Desenfileirar Paciente da lista de atendimento\n");
+        printf("8 - Mostrar fila de atendimento\n");
+        printf("9 - Inserir Paciente na fila prioritaria\n");
+        printf("10 - Retirar Paciente da lista prioritaria\n");
+        printf("11 - Mostrar fila prioritaria\n");
+        printf("0 - Sair\n");
+        printf("Escolha uma opcao: ");
+        scanf("%d", &opcao);
+
+        switch(opcao) {
+            case 1: {
+                Registro novo;
+                novo.Entrada = malloc(sizeof(Data));
+
+                printf("\nNome: ");
+                scanf(" %[^\n]", novo.Nome); //pega o nome composto
+                printf("\nIdade: ");
+                scanf("%d", &novo.Idade);
+                printf("\nRG: ");
+                scanf("%s", novo.RG);
+                printf("\nDia de entrada: ");
+                scanf("%d", &novo.Entrada->Dia);
+                printf("\nMes de entrada: ");
+                scanf("%d", &novo.Entrada->Mes);
+                printf("\nAno de entrada: ");
+                scanf("%d", &novo.Entrada->Ano);
+
+                cadastrar_paciente(lista, novo);
+                printf("\nPaciente cadastrado com sucesso!\n");
+                break;
+            }
+
+            case 2: {
+                printf("\nDigite o RG para consultar: ");
+                scanf("%s", rg);
+                Paciente *p = consultar_paciente(lista, rg);
+                if(p != NULL){
+                    printf("\n--- Paciente encontrado ---\n");
+                    printf("\nNome: %s\n", p->dados.Nome);
+                    printf("\nIdade: %d\n", p->dados.Idade);
+                    printf("\nRG: %s\n", p->dados.RG);
+                    printf("\nEntrada: %02d/%02d/%04d\n", 
+                        p->dados.Entrada->Dia,
+                        p->dados.Entrada->Mes,
+                        p->dados.Entrada->Ano);
+                } else {
+                    printf("\nPaciente nao encontrado.\n");
+                }
+                break;
+            }
+
+            case 3:
+                mostrar_lista(lista);
+                break;
+
+            case 4:
+                printf("\nDigite o RG do paciente a ser atualizado: ");
+                scanf("%s", rg);
+                atualizar_paciente(lista, rg);
+                break;
+
+            case 5:
+                printf("\nDigite o RG do paciente a ser removido: ");
+                scanf("%s", rg);
+                remover_paciente(lista, rg);
+                break;
+            
+            case 6:
+                printf("\nDigite o RG do paciente para enfileirar: ");
+                scanf("%s", rg);
+                Paciente *p = consultar_paciente(lista, rg);
+                if(p != NULL) {
+                    enqueue(&fila, p);
+                    printf("\nPaciente enfileirado com sucesso!\n");
+                } 
+                else {
+                    printf("\nPaciente nao encontrado!\n");
+                }
+                break;
+
+            case 7: 
+                proximo = dequeue(&fila);  
+                if (proximo != NULL) {
+                    printf("\nAtendendo paciente: %s\n", proximo->dados.Nome);
+                } else {
+                    printf("\nFila vazia!\n");
+                }
+                break;
+            
+
+            case 8:
+                show_queue(&fila);
+                break;
+                
+             case 9:
+                printf("RG do paciente para fila prioritária: ");
+                scanf("%s", rg);
+                proximo = consultar_paciente(lista, rg);
+                if (proximo)
+                    inserir_heap(heap, &proximo->dados);
+                else
+                    printf("Paciente não encontrado.\n");
+                break;
+
+             case 10:
+                r = remover_heap(heap);
+                if (r != NULL)
+                    printf("Atendendo prioritário: %s (Idade: %d)\n", r->Nome, r->Idade);
+                break;
+
+             case 11:
+                mostrar_heap(heap);
+                break;
+
+            case 0:
+                printf("\nSaindo...\n");
+                break;
+
+            default:
+                printf("\nOpcao invalida.\n");
+                break;
+        }
+
+    } while(opcao != 0);
+
+    return 0;
+}
